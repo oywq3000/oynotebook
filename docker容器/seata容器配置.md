@@ -311,8 +311,6 @@ seata:
       urls: /,/**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-fe/public/**,/api/v1/auth/login
 ```
 
-
-
 运行容器：(seata-server),其中SEATA_IP=seata-server暴露本身的ip端口给同一网络下的其它容器
 
 ```
@@ -322,6 +320,7 @@ docker run --name seata-server \
     -p 8091:8091 \
     -p 7091:7091 \
     -v /root/dockerio/seata/seata-config/resources:/seata-server/resources \
-    -e SEATA_IP=seata-server \
+    -e SEATA_IP=192.168.200.130 \
     -d seataio/seata-server:1.6.0
 ```
+其中SEATA_IP环境变量代表容器对外暴露的访问IP，一般设置为本机ip

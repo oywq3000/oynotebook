@@ -15,7 +15,6 @@ docker run --name seata-server
     -v /root/dockerio/seata/seata-config:/root/seata-config
     -d seataio/seata-server:1.6.0
 
-
 [
     {
         "Id": "6f9c32c20ffa24b44e6fa65662b3b638d8e5ece781ce328986587c4bdcf0f792",
@@ -274,3 +273,20 @@ docker run --name seata-server
         }
     }
 ]
+docker run --name seata-server 
+    --restart always
+    -p 8091:8091
+    -p 7091:7091
+    -v /root/dockerio/seata/seata-config/resources:/seata-server/resources
+    -e SEATA_IP=seata-server
+    -d seataio/seata-server:1.6.0
+
+
+docker run --name seata-server \
+    --restart always \
+    --network heads-net \
+    -p 8091:8091 \
+    -p 7091:7091 \
+    -v /root/dockerio/seata/seata-config/resources:/seata-server/resources \
+    -e SEATA_IP=192.168.200.130 \
+    -d seataio/seata-server:1.6.0
