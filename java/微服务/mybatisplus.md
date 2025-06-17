@@ -148,3 +148,42 @@ User类中有一个用户状态字段：
 ![1749996923576](image/mybatisplus/1749996923576.png)
 
 ![1749997037501](image/mybatisplus/1749997037501.png)
+
+# 分页插件
+
+首先，要在配置类中注册MyBatisPlus的核心插件，同时添加分页插件：
+
+```
+@Configuration
+public class MyBatisConfig{
+    //mybatisPlus 配置
+    @Bean
+    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+	//1.初始化核心插件
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+	//2.添加分页插件
+  	PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
+        //设置最大分页值
+        paginationInnerInterceptor.setMaxLimit(1000L);
+        interceptor.addInnerInterceptor(paginationInnerInterceptor);
+        return interceptor;
+    }
+}
+
+```
+
+使用分页查序：
+
+```
+  	IPage page = new Page(dto.getPage(),dto.getSize());
+	//按用户查询
+        lambdaQueryWrapper.eq(WmMaterial::getUserId,WmThreadLocalUtil.getUser().getId());
+        //按时间倒序
+        lambdaQueryWrapper.orderByDesc(WmMaterial::getCreatedTime);
+
+        IPage page1 = page(page, lambdaQueryWrapper);
+        PageResponseResult pageResponseResult = new PageResponseResult(dto.getPage(), dto.getSize(), (int) page1.getTotal());
+        pageResponseResult.setData(page1.getRecords());
+
+        return pageResponseResult;
+```
