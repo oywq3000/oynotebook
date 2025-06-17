@@ -68,3 +68,74 @@ FLUSH PRIVILEGES;
 ```bash
 mysql -h <remote_server_ip> -u <username> -p
 ```
+
+
+# 挂载详细
+
+* 挂载 `/root/mysql/data`到容器内的 `/var/lib/mysql`目录
+* 挂载 `/root/mysql/init`到容器内的 `/docker-entrypoint-initdb.d`目录（初始化的SQL脚本目录）
+* 挂载 `/root/mysql/conf`到容器内的 `/etc/mysql/conf.d`目录（这个是MySQL配置文件目录）
+
+```
+docker run \
+--restart always \
+-p 3307:3306 \
+--name hm_mysql \
+--privileged=true \
+-v ~/dockerio/hm_mysql/conf:/etc/mysql/conf.d \
+-v ~/dockerio/hm_mysql/logs:/logs \
+-v ~/dockerio/hm_mysql/data:/var/lib/mysql \
+-v ~/dockerio/hm_mysql/init:/docker-entrypoint-initdb.d \
+-e TZ=Asia/Shanghai \
+-e MYSQL_ROOT_PASSWORD=123456 \
+-d mysql:8
+```
+
+# 实践Docker-Compose
+
+```yaml
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - "./mysql/conf:/etc/mysql/conf.d"
+      - "./mysql/data:/var/lib/mysql"
+      - "./mysql/init:/docker-entrypoint-initdb.d"
+    networks:
+      - hm-net
+  hmall:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: hmall
+    ports:
+      - "8080:8080"
+    networks:
+      - hm-net
+    depends_on:
+      - mysql
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "18080:18080"
+      - "18081:18081"
+    volumes:
+      - "./nginx/nginx.conf:/etc/nginx/nginx.conf"
+      - "./nginx/html:/usr/share/nginx/html"
+    depends_on:
+      - hmall
+    networks:
+      - hm-net
+networks:
+  hm-net:
+    name: hmall
+```
