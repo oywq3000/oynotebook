@@ -27,8 +27,8 @@ docker run -d \
 -p 9848:9848 \
 -p 9849:9849 \
 --restart=always \
---network hm_net \
-nacos/nacos-server:2.0.2
+--network hm-net \
+nacos/nacos-server:
 
 ```
 
@@ -41,4 +41,19 @@ nacos/nacos-server:2.0.2
       <groupId>com.alibaba.cloud</groupId>
       <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
  </dependency>
+```
+
+# 服务发现
+
+```
+ private final DiscoveryClient discoveryClient;
+ private void handleCartItems(List<CartVO> vos) {
+        //1.根据服务名，拉取服务的实例列表
+        List<ServiceInstance> instances = discoveryClient.getInstances("item-service");
+        //2.负载均衡，挑选一个实例
+        ServiceInstance instance = instances.get(RandomUtil.randomInt(instances.size()));
+        //3.获取实例的IP和端口
+        URI uri = instance.getUri();
+        //...略
+}
 ```
