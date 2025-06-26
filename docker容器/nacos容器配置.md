@@ -27,7 +27,7 @@ docker run -d \
 -p 9848:9848 \
 -p 9849:9849 \
 --restart=always \
---network hm-net \
+--network hm_net \
 nacos/nacos-server:
 
 ```
