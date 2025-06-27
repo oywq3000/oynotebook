@@ -22,7 +22,6 @@ https://gitee.com/seata-io/seata/blob/develop/script/config-center/config.txt
 ```
 
 ```yml
-
 transport.type=TCP
 transport.server=NIO
 transport.heartbeat=true
@@ -119,7 +118,7 @@ metrics.exporterList=prometheus
 metrics.exporterPrometheusPort=9898
 ```
 
-在 nacos 配置管理中，给命名空间 seata 中添加配置 seataServer.properties ， Group 设置为 SEATA_GROUP，并将 config.txt 的内容全部复制进来：
+在 nacos 配置管理中，给命名空间 seata 中添加配置 seataServer.properties ， Group 设置为 SEATA_GROUP，并将 config.txt 的内容全部复制进来：（可选择在本地配置)
 
 ![1749868573203](image/seata容器配置copy/1749868573203.png)
 
@@ -195,6 +194,26 @@ CREATE TABLE IF NOT EXISTS `lock_table`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8;
 
+CREATE TABLE `distributed_lock` (
+  `lock_key` varchar(128) NOT NULL COMMENT '锁的键',
+  `lock_value` varchar(128) NOT NULL COMMENT '锁的值',
+  `expire` bigint NOT NULL COMMENT '过期时间',
+  PRIMARY KEY (`lock_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `undo_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `branch_id` bigint NOT NULL COMMENT '分支事务ID',
+  `xid` varchar(100) NOT NULL COMMENT '全局事务ID',
+  `context` varchar(128) NOT NULL COMMENT '上下文',
+  `rollback_info` longblob NOT NULL COMMENT '回滚日志',
+  `log_status` int NOT NULL COMMENT '状态：0-正常，1-已回滚',
+  `log_created` datetime NOT NULL COMMENT '创建时间',
+  `log_modified` datetime NOT NULL COMMENT '修改时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_undo_log` (`xid`,`branch_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
 ```
 
 配置application.yml（如果nacos 不需要账号密码登录，这里就直接留空）
@@ -259,9 +278,9 @@ seata:
 
 示例：
 
-```
+```yaml
 server:
-  port: 7091
+  port: 7099
 
 spring:
   application:
@@ -271,12 +290,12 @@ logging:
   config: classpath:logback-spring.xml
   file:
     path: ${user.home}/logs/seata
-  extend:
-    logstash-appender:
-      destination: 127.0.0.1:4560
-    kafka-appender:
-      bootstrap-servers: 127.0.0.1:9092
-      topic: logback_to_logstash
+  # extend:
+  #  logstash-appender:
+  #    destination: 127.0.0.1:4560
+  #  kafka-appender:
+  #    bootstrap-servers: 127.0.0.1:9092
+  #    topic: logback_to_logstash
 
 console:
   user:
@@ -286,11 +305,8 @@ console:
 seata:
   config:
     # support: nacos, consul, apollo, zk, etcd3
-    type: nacos
-    nacos: 
-	server-addr: nacos:8848
-	group: SEATA_GROUP
-	data-id: seataServer.properties
+    type: file
+   
   registry:
     # support: nacos, eureka, redis, zk, consul, etcd3, sofa
     type: nacos
@@ -298,17 +314,73 @@ seata:
 	application: seata-server
 	server-addr: nacos:8848
 	group: SEATA_GROUP
-	cluster: default
-  store:
-    # support: file 、 db 、 redis
-    mode: file
-#  server:
-#    service-port: 8091 #If not configured, the default is '${server.port} + 1000'
+	namespace: ""
+	username: "nacos"
+	password: "nacos"
   security:
     secretKey: SeataSecretKey0c382ef121d778043159209298fd40bf3850a017
     tokenValidityInMilliseconds: 1800000
     ignore:
       urls: /,/**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-fe/public/**,/api/v1/auth/login
+  server:
+    # service-port: 8091 #If not configured, the default is '${server.port} + 1000'
+    max-commit-retry-timeout: -1
+    max-rollback-retry-timeout: -1
+    rollback-retry-timeout-unlock-enable: false
+    enable-check-auth: true
+    enable-parallel-request-handle: true
+    retry-dead-threshold: 130000
+    xaer-nota-retry-timeout: 60000
+    enableParallelRequestHandle: true
+    recovery:
+      committing-retry-period: 1000
+      async-committing-retry-period: 1000
+      rollbacking-retry-period: 1000
+      timeout-retry-period: 1000
+    undo:
+      log-save-days: 7
+      log-delete-period: 86400000
+    session:
+      branch-async-queue-size: 5000 #branch async remove queue size
+      enable-branch-async-remove: false #enable to asynchronous remove branchSession
+  store:
+    # support: file 、 db 、 redis
+    mode: db
+    session:
+      mode: db
+    lock:
+      mode: db
+    db:
+      datasource: druid
+      db-type: mysql
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://mysql:3306/seata?rewriteBatchedStatements=true&serverTimezone=UTC
+      user: root
+      password: 123
+      min-conn: 10
+      max-conn: 100
+      global-table: global_table
+      branch-table: branch_table
+      lock-table: lock_table
+      distributed-lock-table: distributed_lock
+      query-limit: 1000
+      max-wait: 5000
+
+  metrics:
+    enabled: false
+    registry-type: compact
+    exporter-list: prometheus
+    exporter-prometheus-port: 9898
+  transport:
+    rpc-tc-request-timeout: 15000
+    enable-tc-server-batch-send-response: false
+    shutdown:
+      wait: 3
+    thread-factory:
+      boss-thread-prefix: NettyBoss
+      worker-thread-prefix: NettyServerNIOWorker
+      boss-thread-size: 1
+
 ```
 
 运行容器：(seata-server),其中SEATA_IP=seata-server暴露本身的ip端口给同一网络下的其它容器
@@ -323,4 +395,5 @@ docker run --name seata-server \
     -e SEATA_IP=192.168.200.130 \
     -d seataio/seata-server:1.6.0
 ```
+
 其中SEATA_IP环境变量代表容器对外暴露的访问IP，一般设置为本机ip
