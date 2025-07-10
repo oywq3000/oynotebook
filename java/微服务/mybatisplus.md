@@ -3,14 +3,26 @@
 1. 引入依赖
 
    ```
-   <dependency>
-       <groupId>com.baomidou</groupId>
-       <artifactId>mybatis-plus-boot-starter</artifactId>
-       <version>${mybatis.plus.version}</version>
-   </dependency>
+    <!--MybatisPlus-->
+           <dependency>
+               <groupId>com.baomidou</groupId>
+               <artifactId>mybatis-plus-boot-starter</artifactId>
+               <version>${mybatis-plus.version}</version>
+               <exclusions>
+                   <exclusion>
+                       <artifactId>mybatis-spring</artifactId>
+                       <groupId>org.mybatis</groupId>
+                   </exclusion>
+               </exclusions>
+           </dependency>
+           <dependency>
+               <groupId>org.mybatis</groupId>
+               <artifactId>mybatis-spring</artifactId>
+               <version>3.0.3</version>
+           </dependency>
    ```
 
-   该依赖还集成了Mybatis的starter，因此可以单引入这一个依赖就行
+   该依赖还集成了Mybatis的starter，因此可以单引入这一个依赖就行（注意mybatisplus3.5.6版本中自带的mybatis-spring版本过低要排除后加）
 2. 定义Mapper
    自定义的Mapper继承MybatisPlus提供的BaseMapper接口：
 

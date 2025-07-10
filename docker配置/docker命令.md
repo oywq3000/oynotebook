@@ -21,3 +21,13 @@ alias dpsa='docker ps -a --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Po
 ```
 docker update --restart=always <容器id或名子>
 ```
+
+# 改变和查看文件夹访问模式
+
+```
+chmod 777 /root/app/mall-swarm/elasticsearch/data
+```
+
+```
+ls -ld /path/to/your/directory
+```
