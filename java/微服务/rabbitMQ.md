@@ -522,7 +522,7 @@ spring:
 ```
  @RabbitListener(queues = "object.queue")
     public void listenObjectQueue3(Message message){
-    
+  
         log.info("监听到fanout.queue2的消息ID：{}",message.getMessageProperties().getMessageId());
     }
 ```
