@@ -4,7 +4,7 @@
 docker load -i /path/to/your-image.tar
 ```
 
-# 自定义Docker ps
+# 自定义Docker ps（在vim ~/.bashrc中添加）
 
 ```
 alias dps='docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
